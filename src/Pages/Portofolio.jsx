@@ -180,6 +180,24 @@ const videoData = [
     videoSrc: "/videos/reel10.mp4",
     title: "Portfolio Highlight",
     description: "First video i took showcasing my skills"
+  },
+  {
+    id: 11,
+    videoSrc: "/videos/reel11.mp4",
+    title: "Turbo Nights",
+    description: "Dji osmom 4 pro"
+  },
+  {
+    id: 12,
+    videoSrc: "/videos/reel12.mp4",
+    title: "Ungaraged tuning vw",
+    description: "Stage 3 tuning"
+  },
+  {
+    id: 13,
+    videoSrc: "/videos/reel13.mp4",
+    title: "Mombasa Trip",
+    description: "Jetskiing clip"
   }
 ];
 
