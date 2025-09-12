@@ -15,7 +15,8 @@ import TechStackIcon from "../components/TechStackIcon";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import Certificate from "../components/Certificate";
-import { Code, Award, Boxes } from "lucide-react";
+import VideoCard from "../components/VideoCard";
+import { Code, Award, Boxes, Video } from "lucide-react";
 
 
 const ToggleButton = ({ onClick, isShowingMore }) => (
@@ -118,6 +119,70 @@ const techStacks = [
   // { icon: "SweetAlert.svg", language: "SweetAlert2" },
 ];
 
+// Sample video data - Replace with your actual video files
+const videoData = [
+  {
+    id: 1,
+    videoSrc: "/videos/reel1.mp4",
+    title: "Google cloud roadshow Recap",
+    description: "scenery"
+  },
+  {
+    id: 2,
+    videoSrc: "/videos/reel2.mp4",
+    title: "Google cloud roadshow venue",
+    description: "Radison blu"
+  },
+  {
+    id: 3,
+    videoSrc: "/videos/reel3.mp4",
+    title: "Ai Summit",
+    description: "Strathmore University"
+  },
+  {
+    id: 4,
+    videoSrc: "/videos/reel4.mp4",
+    title: "Angular Kenya",
+    description: "NG kenya ticket sales"
+  },
+  {
+    id: 5,
+    videoSrc: "/videos/reel5.mp4",
+    title: "Angular Kenya",
+    description: "Ticket are out!"
+  },
+  {
+    id: 6,
+    videoSrc: "/videos/reel6.mp4",
+    title: "GDG Nairobi",
+    description: "Devfest venue announcement"
+  },
+  {
+    id: 7,
+    videoSrc: "/videos/reel7.mp4",
+    title: "GDG Nairobi",
+    description: "Transportation details"
+  },
+  {
+    id: 8,
+    videoSrc: "/videos/reel8.mp4",
+    title: "GDG Nairobi",
+    description: "Devfest behind the scenes"
+  },
+  {
+    id: 9,
+    videoSrc: "/videos/reel9.mp4",
+    title: "Angular Kenya",
+    description: "build with Ai interview"
+  },
+  {
+    id: 10,
+    videoSrc: "/videos/reel10.mp4",
+    title: "Portfolio Highlight",
+    description: "First video i took showcasing my skills"
+  }
+];
+
 export default function FullWidthTabs() {
   const theme = useTheme();
   const [value, setValue] = useState(0);
@@ -125,6 +190,7 @@ export default function FullWidthTabs() {
   const [certificates, setCertificates] = useState([]);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [showAllCertificates, setShowAllCertificates] = useState(false);
+  const [showAllVideos, setShowAllVideos] = useState(false);
   const isMobile = window.innerWidth < 768;
   const initialItems = isMobile ? 4 : 6;
 
@@ -184,13 +250,16 @@ export default function FullWidthTabs() {
   const toggleShowMore = useCallback((type) => {
     if (type === 'projects') {
       setShowAllProjects(prev => !prev);
-    } else {
+    } else if (type === 'certificates') {
       setShowAllCertificates(prev => !prev);
+    } else if (type === 'videos') {
+      setShowAllVideos(prev => !prev);
     }
   }, []);
 
   const displayedProjects = showAllProjects ? projects : projects.slice(0, initialItems);
   const displayedCertificates = showAllCertificates ? certificates : certificates.slice(0, initialItems);
+  const displayedVideos = showAllVideos ? videoData : videoData.slice(0, initialItems);
 
   // Rest of the component (return statement) has no changes
   return (
@@ -294,9 +363,14 @@ export default function FullWidthTabs() {
               {...a11yProps(1)}
             />
             <Tab
+              icon={<Video className="mb-2 w-5 h-5 transition-all duration-300" />}
+              label="Videography"
+              {...a11yProps(2)}
+            />
+            <Tab
               icon={<Boxes className="mb-2 w-5 h-5 transition-all duration-300" />}
               label="Tech Stack"
-              {...a11yProps(2)}
+              {...a11yProps(3)}
             />
           </Tabs>
         </AppBar>
@@ -361,6 +435,34 @@ export default function FullWidthTabs() {
           </TabPanel>
 
           <TabPanel value={value} index={2} dir={theme.direction}>
+            <div className="container mx-auto flex justify-center items-center overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedVideos.map((video, index) => (
+                  <div
+                    key={video.id}
+                    data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
+                    data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
+                  >
+                    <VideoCard
+                      videoSrc={video.videoSrc}
+                      title={video.title}
+                      description={video.description}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {videoData.length > initialItems && (
+              <div className="mt-6 w-full flex justify-start">
+                <ToggleButton
+                  onClick={() => toggleShowMore('videos')}
+                  isShowingMore={showAllVideos}
+                />
+              </div>
+            )}
+          </TabPanel>
+
+          <TabPanel value={value} index={3} dir={theme.direction}>
             <div className="container mx-auto flex justify-center items-center overflow-hidden pb-[5%]">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-8 gap-5">
                 {techStacks.map((stack, index) => (

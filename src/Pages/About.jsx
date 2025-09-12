@@ -214,9 +214,11 @@ const AboutPage = () => {
               data-aos="fade-right"
               data-aos-duration="1500"
             >
-            A dedicated and passionate Software Engineer specializing in Frontend Web Development. With skills in React, JavaScript, HTML, and WordPress, I excel at bringing ideas to life through code. As a Frontend Software Engineer, I thrive on creating solutions to real-world problems, always aiming to build scalable and high-quality products or services that positively impact the community.
+            Frontend Software Engineer specializing in React, JavaScript, and modern web technologies. I create scalable, user-friendly solutions that solve real-world problems and positively impact communities.
 
-            My career is driven by a strong desire to make a difference through technology. I actively seek opportunities that challenge me to grow and allow me to contribute to meaningful projects. In addition to my technical skills, I am deeply committed to advancing the community through technology and inspiring the next generation to explore the tech world.
+            Beyond coding, I'm a Social Media Manager and Content Creator with 2+ years of experience driving brand engagement across platforms. I produce and edit promotional videos, manage content strategies, and have successfully increased follower growth by 20% within three months.
+
+            Passionate about leveraging technology to inspire the next generation and build meaningful digital experiences.
             </p>
 
                {/* Quote Section */}
