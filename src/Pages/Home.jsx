@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, memo } from "react"
-import { Github, Linkedin, Mail, ExternalLink, Instagram, Sparkles } from "lucide-react"
+import { Github, Linkedin, Mail, ExternalLink, Sparkles } from "lucide-react"
 import AOS from 'aos'
 import 'aos/dist/aos.css'
 
@@ -80,8 +80,7 @@ const WORDS = ["Network & Telecom Student", "Tech Enthusiast"];
 const TECH_STACK = ["React", "Javascript", "Node.js", "Tailwind"];
 const SOCIAL_LINKS = [
   { icon: Github, link: "https://github.com/Isack-Mwangasu" },
-  { icon: Linkedin, link: "https://www.linkedin.com/in/isack-mwangasu" },
-  { icon: Instagram, link: "https://www.instagram.com/isak.co.ke/" }
+  { icon: Linkedin, link: "https://www.linkedin.com/in/isack-mwangasu" }
 ];
 
 const Home = () => {
