@@ -24,7 +24,7 @@ const MainTitle = memo(() => (
       <span className="relative inline-block">
         <span className="absolute -inset-2 bg-gradient-to-r from-[#6366f1] to-[#a855f7] blur-2xl opacity-20"></span>
         <span className="relative bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-          Fullstack
+          Frontend
         </span>
       </span>
       <br />
@@ -77,7 +77,7 @@ const TYPING_SPEED = 100;
 const ERASING_SPEED = 50;
 const PAUSE_DURATION = 2000;
 const WORDS = ["Network & Telecom Student", "Tech Enthusiast"];
-const TECH_STACK = ["React", "Javascript", "Node.js", "Tailwind"];
+const TECH_STACK = ["Html", "Javascript", "Css", "Tailwind"];
 const SOCIAL_LINKS = [
   { icon: Github, link: "https://github.com/Isack-Mwangasu" },
   { icon: Linkedin, link: "https://www.linkedin.com/in/isack-mwangasu" }
