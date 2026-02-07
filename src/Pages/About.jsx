@@ -214,10 +214,8 @@ const AboutPage = () => {
               data-aos="fade-right"
               data-aos-duration="1500"
             >
-            Frontend Software Engineer specializing in React, JavaScript, and modern web technologies. I create scalable, user-friendly solutions that solve real-world problems and positively impact communities.
-
-            Beyond coding, I'm a Social Media Manager and Content Creator with 2+ years of experience driving brand engagement across platforms. I produce and edit promotional videos, manage content strategies, and have successfully increased follower growth by 20% within three months.
-
+            Frontend Software Engineer specializing in Html, JavaScript, css and modern web technologies. I create scalable, user-friendly solutions that solve real-world problems and positively impact communities.    
+            
             Passionate about leveraging technology to inspire the next generation and build meaningful digital experiences.
             </p>
 
