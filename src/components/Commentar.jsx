@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { MessageCircle, UserCircle2, Loader2, AlertCircle, Send, ImagePlus, X, Pin } from 'lucide-react';
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { db } from "../firebase";
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
 
 
 const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
@@ -237,159 +239,28 @@ const Comments = () => {
         });
     }, []);
 
-    // Fetch pinned comment with real-time updates
+    // Fetch comments with real-time updates
     useEffect(() => {
-        const fetchPinnedComment = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('portfolio_comments')
-                    .select('*')
-                    .eq('is_pinned', true)
-                    .single();
-
-                if (error && error.code !== 'PGRST116') {
-                    console.warn('Error fetching pinned comment:', error);
-                    return;
-                }
-                
-                if (data) {
-                    setPinnedComment(data);
-                }
-            } catch (error) {
-                console.warn('Error fetching pinned comment:', error);
-            }
-        };
-
-        // Initial fetch
-        fetchPinnedComment();
-
-        // Set up real-time subscription for pinned comments
-        const pinnedSubscription = supabase
-            .channel('pinned_comments_channel')
-            .on('postgres_changes', 
-                { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'portfolio_comments',
-                    filter: 'is_pinned=eq.true'
-                }, 
-                (payload) => {
-                    console.log('Pinned comment changed:', payload);
-                    if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                        setPinnedComment(payload.new);
-                    } else if (payload.eventType === 'DELETE') {
-                        setPinnedComment(null);
-                    }
-                }
-            )
-            .subscribe((status) => {
-                console.log('Pinned subscription status:', status);
+        const q = query(collection(db, "comments"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const commentsArray = [];
+            querySnapshot.forEach((doc) => {
+                commentsArray.push({ id: doc.id, ...doc.data() });
             });
 
-        return () => {
-            console.log('Unsubscribing from pinned comments channel');
-            pinnedSubscription.unsubscribe();
-        };
-    }, []);
+            const pinned = commentsArray.find((comment) => comment.is_pinned === true) || null;
+            const regular = commentsArray.filter((comment) => !comment.is_pinned);
 
-    // Fetch regular comments (excluding pinned) and set up real-time subscription
-    useEffect(() => {
-        const fetchComments = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('portfolio_comments')
-                    .select('*')
-                    .eq('is_pinned', false)
-                    .order('created_at', { ascending: false });
+            setPinnedComment(pinned);
+            setComments(regular);
+        });
 
-                if (error) {
-                    console.warn('Error fetching comments:', error);
-                    return;
-                }
-                
-                setComments(data || []);
-            } catch (error) {
-                console.warn('Error fetching comments:', error);
-            }
-        };
-
-        // Initial fetch
-        fetchComments();
-
-        // Set up real-time subscription with better configuration
-        const subscription = supabase
-            .channel('comments_channel')
-            .on('postgres_changes', 
-                { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 'portfolio_comments',
-                    filter: 'is_pinned=eq.false'
-                }, 
-                (payload) => {
-                    console.log('New comment received:', payload);
-                    // Add the new comment to the beginning of the list
-                    setComments(prev => [payload.new, ...prev]);
-                }
-            )
-            .on('postgres_changes', 
-                { 
-                    event: 'UPDATE', 
-                    schema: 'public', 
-                    table: 'portfolio_comments',
-                    filter: 'is_pinned=eq.false'
-                }, 
-                (payload) => {
-                    console.log('Comment updated:', payload);
-                    // Update the specific comment
-                    setComments(prev => prev.map(comment => 
-                        comment.id === payload.new.id ? payload.new : comment
-                    ));
-                }
-            )
-            .on('postgres_changes', 
-                { 
-                    event: 'DELETE', 
-                    schema: 'public', 
-                    table: 'portfolio_comments',
-                    filter: 'is_pinned=eq.false'
-                }, 
-                (payload) => {
-                    console.log('Comment deleted:', payload);
-                    // Remove the deleted comment
-                    setComments(prev => prev.filter(comment => comment.id !== payload.old.id));
-                }
-            )
-            .subscribe((status) => {
-                console.log('Subscription status:', status);
-            });
-
-        return () => {
-            console.log('Unsubscribing from comments channel');
-            subscription.unsubscribe();
-        };
+        return () => unsubscribe();
     }, []);
 
     const uploadImage = useCallback(async (imageFile) => {
         if (!imageFile) return null;
-        
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `profile-images/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('profile-images')
-            .upload(filePath, imageFile);
-
-        if (uploadError) {
-            throw uploadError;
-        }
-
-        const { data } = supabase.storage
-            .from('profile-images')
-            .getPublicUrl(filePath);
-
-        return data.publicUrl;
+        return null;
     }, []);
 
     const handleCommentSubmit = useCallback(async ({ newComment, userName, imageFile }) => {
@@ -398,22 +269,14 @@ const Comments = () => {
         
         try {
             const profileImageUrl = await uploadImage(imageFile);
-            
-            const { error } = await supabase
-                .from('portfolio_comments')
-                .insert([
-                    {
-                        content: newComment,
-                        user_name: userName,
-                        profile_image: profileImageUrl,
-                        is_pinned: false,
-                        created_at: new Date().toISOString()
-                    }
-                ]);
 
-            if (error) {
-                throw error;
-            }
+            await addDoc(collection(db, "comments"), {
+                content: newComment,
+                user_name: userName,
+                profile_image: profileImageUrl,
+                is_pinned: false,
+                createdAt: serverTimestamp(),
+            });
 
             // Successfully posted - form will be cleared automatically
             
@@ -427,7 +290,7 @@ const Comments = () => {
 
     const formatDate = useCallback((timestamp) => {
         if (!timestamp) return '';
-        const date = new Date(timestamp);
+        const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
         const now = new Date();
         const diffMinutes = Math.floor((now - date) / (1000 * 60));
         const diffHours = Math.floor(diffMinutes / 60);

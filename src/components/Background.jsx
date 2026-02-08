@@ -19,6 +19,9 @@ const AnimatedBackground = () => {
 			currentScroll = newScroll
 
 			blobRefs.current.forEach((blob, index) => {
+				if (!blob) {
+					return
+				}
 				const initialPos = initialPositions[index]
 
 				const xOffset = Math.sin(newScroll / 100 + index * 0.5) * 340
