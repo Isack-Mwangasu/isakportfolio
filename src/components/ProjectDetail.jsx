@@ -5,7 +5,6 @@ import {
   ChevronRight, Layers, Layout, Globe, Package, Cpu, Code,
 } from "lucide-react";
 import Swal from 'sweetalert2';
-import { supabase } from '../supabase';
 
 const TECH_ICONS = {
   React: Globe,
