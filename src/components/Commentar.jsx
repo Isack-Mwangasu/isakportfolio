@@ -20,9 +20,9 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
             </div>
         )}
         <div className="flex items-start gap-3">
-            {comment.profile_image ? (
+            {comment.profile_image || isPinned ? (
                 <img
-                    src={comment.profile_image}
+                    src={comment.profile_image || "/profile.jpg"}
                     alt={`${comment.user_name}'s profile`}
                     className={`w-10 h-10 rounded-full object-cover border-2 flex-shrink-0  ${
                         isPinned ? 'border-indigo-500/50' : 'border-indigo-500/30'
