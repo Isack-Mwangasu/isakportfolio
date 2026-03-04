@@ -120,6 +120,12 @@ const techStacks = [
   // { icon: "SweetAlert.svg", language: "SweetAlert2" },
 ];
 
+const fallbackCertificates = [
+  { id: "public-github", imageUrl: "/certificates/github.jpeg" },
+  { id: "public-moringa", imageUrl: "/certificates/moringa.png" },
+  { id: "public-python", imageUrl: "/certificates/python.jpeg" },
+];
+
 export default function FullWidthTabs() {
   const theme = useTheme();
   const [value, setValue] = useState(0);
@@ -140,7 +146,14 @@ export default function FullWidthTabs() {
 
   const normalizeCertificate = useCallback((certificate) => ({
     ...certificate,
-    Img: certificate.imageUrl ?? certificate.Img,
+    Img:
+      certificate.imageUrl ??
+      certificate.Img ??
+      certificate.img ??
+      certificate.image ??
+      certificate.src ??
+      certificate.path ??
+      certificate.url,
   }), []);
 
   useEffect(() => {
@@ -157,28 +170,51 @@ export default function FullWidthTabs() {
         getDocs(collection(db, "certificates")),
       ]);
 
+      let certificateDocs = certificatesSnap.docs;
+      if (certificateDocs.length === 0) {
+        const fallbackCertificatesSnap = await getDocs(collection(db, "certificate"));
+        certificateDocs = fallbackCertificatesSnap.docs;
+      }
+      if (certificateDocs.length === 0) {
+        const fallbackCertificatesSnap = await getDocs(collection(db, "Certificates"));
+        certificateDocs = fallbackCertificatesSnap.docs;
+      }
+
       const projectData = projectsSnap.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })).map(normalizeProject);
-      const certificateData = certificatesSnap.docs.map((doc) => ({
+      const certificateData = certificateDocs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      })).map(normalizeCertificate);
+      }))
+        .map(normalizeCertificate)
+        .filter((certificate) => Boolean(certificate.Img));
+
+      const finalCertificateData =
+        certificateData.length > 0
+          ? certificateData
+          : fallbackCertificates.map((certificate) => normalizeCertificate(certificate));
 
       console.log("Firestore projects:", projectData);
       console.log("Firestore certificates:", certificateData);
 
       projectData.sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0));
-      certificateData.sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0));
+      finalCertificateData.sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0));
 
       setProjects(projectData);
-      setCertificates(certificateData);
+      setCertificates(finalCertificateData);
 
       localStorage.setItem("projects", JSON.stringify(projectData));
-      localStorage.setItem("certificates", JSON.stringify(certificateData));
+      localStorage.setItem("certificates", JSON.stringify(finalCertificateData));
     } catch (error) {
       console.error("Error fetching data from Firestore:", error.message);
+
+      const fallbackCertificateData = fallbackCertificates.map((certificate) =>
+        normalizeCertificate(certificate)
+      );
+      setCertificates(fallbackCertificateData);
+      localStorage.setItem("certificates", JSON.stringify(fallbackCertificateData));
     }
   }, []);
 

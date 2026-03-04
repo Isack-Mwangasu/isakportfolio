@@ -96,6 +96,19 @@ const handleGithubClick = (githubLink) => {
   return true;
 };
 
+const resolvePublicImagePath = (imagePath) => {
+  if (!imagePath) return "";
+
+  const isAbsoluteOrExternal =
+    imagePath.startsWith("/") ||
+    imagePath.startsWith("http://") ||
+    imagePath.startsWith("https://") ||
+    imagePath.startsWith("data:") ||
+    imagePath.startsWith("blob:");
+
+  return isAbsoluteOrExternal ? imagePath : `/${imagePath}`;
+};
+
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -258,7 +271,7 @@ const ProjectDetails = () => {
               
                 <div className="absolute inset-0 bg-gradient-to-t from-[#030014] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <img
-                  src={project.imageUrl || project.Img}
+                  src={resolvePublicImagePath(project.imageUrl || project.Img)}
                   alt={project.title}
                   className="w-full  object-cover transform transition-transform duration-700 will-change-transform group-hover:scale-105"
                   onLoad={() => setIsImageLoaded(true)}
