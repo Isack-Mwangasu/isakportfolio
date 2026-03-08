@@ -3,8 +3,22 @@ import { Modal, IconButton, Box, Fade, Backdrop, Zoom, Typography } from "@mui/m
 import CloseIcon from "@mui/icons-material/Close"
 import FullscreenIcon from "@mui/icons-material/Fullscreen"
 
+const resolvePublicImagePath = (imagePath) => {
+	if (!imagePath) return ""
+
+	const isAbsoluteOrExternal =
+		imagePath.startsWith("/") ||
+		imagePath.startsWith("http://") ||
+		imagePath.startsWith("https://") ||
+		imagePath.startsWith("data:") ||
+		imagePath.startsWith("blob:")
+
+	return isAbsoluteOrExternal ? imagePath : `/${imagePath}`
+}
+
 const Certificate = ({ ImgSertif }) => {
 	const [open, setOpen] = useState(false)
+	const imageSrc = resolvePublicImagePath(ImgSertif)
 
 	const handleOpen = () => {
 		setOpen(true)
@@ -57,7 +71,7 @@ const Certificate = ({ ImgSertif }) => {
 					}}>
 					<img
 						className="certificate-image"
-						src={ImgSertif}
+						src={imageSrc}
 						alt="Certificate"
 						style={{
 							width: "100%",
@@ -178,7 +192,7 @@ const Certificate = ({ ImgSertif }) => {
 
 					{/* Modal Image */}
 					<img
-						src={ImgSertif}
+						src={imageSrc}
 						alt="Certificate Full View"
 						style={{
 							display: "block",

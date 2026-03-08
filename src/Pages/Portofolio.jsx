@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-
-import { supabase } from "../supabase"; 
-
+import { db } from "../firebase";
+import { collection, getDocs } from "firebase/firestore";
 import PropTypes from "prop-types";
 import SwipeableViews from "react-swipeable-views";
 import { useTheme } from "@mui/material/styles";
@@ -121,6 +120,12 @@ const techStacks = [
   // { icon: "SweetAlert.svg", language: "SweetAlert2" },
 ];
 
+const fallbackCertificates = [
+  { id: "public-github", imageUrl: "/certificates/github.jpeg" },
+  { id: "public-moringa", imageUrl: "/certificates/moringa.png" },
+  { id: "public-python", imageUrl: "/certificates/python.jpeg" },
+];
+
 export default function FullWidthTabs() {
   const theme = useTheme();
   const [value, setValue] = useState(0);
@@ -131,6 +136,26 @@ export default function FullWidthTabs() {
   const isMobile = window.innerWidth < 768;
   const initialItems = isMobile ? 4 : 6;
 
+  const normalizeProject = useCallback((project) => ({
+    ...project,
+    Title: project.title ?? project.Title,
+    Description: project.description ?? project.Description,
+    Link: project.liveLink ?? project.Link,
+    Img: project.imageUrl ?? project.Img,
+  }), []);
+
+  const normalizeCertificate = useCallback((certificate) => ({
+    ...certificate,
+    Img:
+      certificate.imageUrl ??
+      certificate.Img ??
+      certificate.img ??
+      certificate.image ??
+      certificate.src ??
+      certificate.path ??
+      certificate.url,
+  }), []);
+
   useEffect(() => {
     AOS.init({
       once: false,
@@ -140,28 +165,56 @@ export default function FullWidthTabs() {
 
   const fetchData = useCallback(async () => {
     try {
-      // Fetch data from Supabase in parallel
-      const [projectsResponse, certificatesResponse] = await Promise.all([
-        supabase.from("projects").select("*").order('id', { ascending: true }),
-        supabase.from("certificates").select("*").order('id', { ascending: true }), 
+      const [projectsSnap, certificatesSnap] = await Promise.all([
+        getDocs(collection(db, "projects")),
+        getDocs(collection(db, "certificates")),
       ]);
 
-      // Error handling for each request
-      if (projectsResponse.error) throw projectsResponse.error;
-      if (certificatesResponse.error) throw certificatesResponse.error;
+      let certificateDocs = certificatesSnap.docs;
+      if (certificateDocs.length === 0) {
+        const fallbackCertificatesSnap = await getDocs(collection(db, "certificate"));
+        certificateDocs = fallbackCertificatesSnap.docs;
+      }
+      if (certificateDocs.length === 0) {
+        const fallbackCertificatesSnap = await getDocs(collection(db, "Certificates"));
+        certificateDocs = fallbackCertificatesSnap.docs;
+      }
 
-      // Supabase returns data in the 'data' property
-      const projectData = projectsResponse.data || [];
-      const certificateData = certificatesResponse.data || [];
+      const projectData = projectsSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })).map(normalizeProject);
+      const certificateData = certificateDocs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+        .map(normalizeCertificate)
+        .filter((certificate) => Boolean(certificate.Img));
+
+      const finalCertificateData =
+        certificateData.length > 0
+          ? certificateData
+          : fallbackCertificates.map((certificate) => normalizeCertificate(certificate));
+
+      console.log("Firestore projects:", projectData);
+      console.log("Firestore certificates:", certificateData);
+
+      projectData.sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0));
+      finalCertificateData.sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0));
 
       setProjects(projectData);
-      setCertificates(certificateData);
+      setCertificates(finalCertificateData);
 
-      // Store in localStorage (this functionality is maintained)
       localStorage.setItem("projects", JSON.stringify(projectData));
-      localStorage.setItem("certificates", JSON.stringify(certificateData));
+      localStorage.setItem("certificates", JSON.stringify(finalCertificateData));
     } catch (error) {
-      console.error("Error fetching data from Supabase:", error.message);
+      console.error("Error fetching data from Firestore:", error.message);
+
+      const fallbackCertificateData = fallbackCertificates.map((certificate) =>
+        normalizeCertificate(certificate)
+      );
+      setCertificates(fallbackCertificateData);
+      localStorage.setItem("certificates", JSON.stringify(fallbackCertificateData));
     }
   }, []);
 
@@ -173,12 +226,14 @@ export default function FullWidthTabs() {
     const cachedCertificates = localStorage.getItem('certificates');
 
     if (cachedProjects && cachedCertificates) {
-        setProjects(JSON.parse(cachedProjects));
-        setCertificates(JSON.parse(cachedCertificates));
+      const parsedProjects = JSON.parse(cachedProjects).map(normalizeProject);
+      const parsedCertificates = JSON.parse(cachedCertificates).map(normalizeCertificate);
+      setProjects(parsedProjects);
+      setCertificates(parsedCertificates);
     }
     
     fetchData(); // Still call fetchData for latest data synchronization
-  }, [fetchData]);
+  }, [fetchData, normalizeCertificate, normalizeProject]);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -319,10 +374,10 @@ export default function FullWidthTabs() {
                     data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
                   >
                     <CardProject
-                      Img={project.Img}
-                      Title={project.Title}
-                      Description={project.Description}
-                      Link={project.Link}
+                      Img={project.imageUrl || project.Img}
+                      Title={project.title || project.Title}
+                      Description={project.description || project.Description}
+                      Link={project.liveLink || project.Link}
                       id={project.id}
                     />
                   </div>

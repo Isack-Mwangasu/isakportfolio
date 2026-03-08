@@ -5,7 +5,8 @@ import {
   ChevronRight, Layers, Layout, Globe, Package, Cpu, Code,
 } from "lucide-react";
 import Swal from 'sweetalert2';
-import { supabase } from '../supabase';
+import { db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const TECH_ICONS = {
   React: Globe,
@@ -49,8 +50,8 @@ const FeatureItem = ({ feature }) => {
 };
 
 const ProjectStats = ({ project }) => {
-  const techStackCount = project?.TechStack?.length || 0;
-  const featuresCount = project?.Features?.length || 0;
+  const techStackCount = (project?.technologies || project?.techStack || []).length;
+  const featuresCount = project?.keyFeatures?.length || 0;
 
   return (
     <div className="grid grid-cols-2 gap-3 md:gap-4 p-3 md:p-4 bg-[#0a0a1a] rounded-xl overflow-hidden relative">
@@ -95,6 +96,19 @@ const handleGithubClick = (githubLink) => {
   return true;
 };
 
+const resolvePublicImagePath = (imagePath) => {
+  if (!imagePath) return "";
+
+  const isAbsoluteOrExternal =
+    imagePath.startsWith("/") ||
+    imagePath.startsWith("http://") ||
+    imagePath.startsWith("https://") ||
+    imagePath.startsWith("data:") ||
+    imagePath.startsWith("blob:");
+
+  return isAbsoluteOrExternal ? imagePath : `/${imagePath}`;
+};
+
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -107,26 +121,22 @@ const ProjectDetails = () => {
     
     const fetchProject = async () => {
       try {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const projectRef = doc(db, "projects", id);
+        const projectSnap = await getDoc(projectRef);
 
-        if (error) {
-          console.error('Error fetching project:', error);
+        if (!projectSnap.exists()) {
+          setProject(null);
           return;
         }
 
-        if (data) {
-          const enhancedProject = {
-            ...data,
-            Features: data.Features || [],
-            TechStack: data.TechStack || [],
-            Github: data.Github || 'https://github.com/Isack-Mwangasu',
-          };
-          setProject(enhancedProject);
-        }
+        const data = projectSnap.data();
+        const enhancedProject = {
+          ...data,
+          keyFeatures: data.keyFeatures || data["Key Features"] || data.Features || [],
+          technologies: data.technologies || data.techStack || data.TechStack || [],
+          githubLink: data.githubLink || 'https://github.com/Isack-Mwangasu',
+        };
+        setProject(enhancedProject);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -189,7 +199,7 @@ const ProjectDetails = () => {
             <div className="flex items-center space-x-1 md:space-x-2 text-sm md:text-base text-white/50">
               <span>Projects</span>
               <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="text-white/90 truncate">{project.Title}</span>
+              <span className="text-white/90 truncate">{project.title}</span>
             </div>
           </div>
 
@@ -197,7 +207,7 @@ const ProjectDetails = () => {
             <div className="space-y-6 md:space-y-10 animate-slideInLeft">
               <div className="space-y-4 md:space-y-6">
                 <h1 className="text-3xl md:text-6xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent leading-tight">
-                  {project.Title}
+                  {project.title}
                 </h1>
                 <div className="relative h-1 w-16 md:w-24">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse" />
@@ -207,7 +217,7 @@ const ProjectDetails = () => {
 
               <div className="prose prose-invert max-w-none">
                 <p className="text-base md:text-lg text-gray-300/90 leading-relaxed">
-                  {project.Description}
+                  {project.description}
                 </p>
               </div>
 
@@ -216,7 +226,7 @@ const ProjectDetails = () => {
               <div className="flex flex-wrap gap-3 md:gap-4">
                 {/* Action buttons */}
                 <a
-                  href={project.Link}
+                  href={project.liveLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative inline-flex items-center space-x-1.5 md:space-x-2 px-4 md:px-8 py-2.5 md:py-4 bg-gradient-to-r from-blue-600/10 to-purple-600/10 hover:from-blue-600/20 hover:to-purple-600/20 text-blue-300 rounded-xl transition-all duration-300 border border-blue-500/20 hover:border-blue-500/40 backdrop-blur-xl overflow-hidden text-sm md:text-base"
@@ -227,11 +237,11 @@ const ProjectDetails = () => {
                 </a>
 
                 <a
-                  href={project.Github}
+                  href={project.githubLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative inline-flex items-center space-x-1.5 md:space-x-2 px-4 md:px-8 py-2.5 md:py-4 bg-gradient-to-r from-purple-600/10 to-pink-600/10 hover:from-purple-600/20 hover:to-pink-600/20 text-purple-300 rounded-xl transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 backdrop-blur-xl overflow-hidden text-sm md:text-base"
-                  onClick={(e) => !handleGithubClick(project.Github) && e.preventDefault()}
+                  onClick={(e) => !handleGithubClick(project.githubLink) && e.preventDefault()}
                 >
                   <div className="absolute inset-0 translate-y-[100%] bg-gradient-to-r from-purple-600/10 to-pink-600/10 transition-transform duration-300 group-hover:translate-y-[0%]" />
                   <Github className="relative w-4 h-4 md:w-5 md:h-5 group-hover:rotate-12 transition-transform" />
@@ -244,9 +254,9 @@ const ProjectDetails = () => {
                   <Code2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
                   Technologies Used
                 </h3>
-                {project.TechStack.length > 0 ? (
+                {(project.technologies || project.techStack || []).length > 0 ? (
                   <div className="flex flex-wrap gap-2 md:gap-3">
-                    {project.TechStack.map((tech, index) => (
+                    {(project.technologies || project.techStack).map((tech, index) => (
                       <TechBadge key={index} tech={tech} />
                     ))}
                   </div>
@@ -261,8 +271,8 @@ const ProjectDetails = () => {
               
                 <div className="absolute inset-0 bg-gradient-to-t from-[#030014] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <img
-                  src={project.Img}
-                  alt={project.Title}
+                  src={resolvePublicImagePath(project.imageUrl || project.Img)}
+                  alt={project.title}
                   className="w-full  object-cover transform transition-transform duration-700 will-change-transform group-hover:scale-105"
                   onLoad={() => setIsImageLoaded(true)}
                 />
@@ -275,9 +285,9 @@ const ProjectDetails = () => {
                   <Star className="w-5 h-5 text-yellow-400 group-hover:rotate-[20deg] transition-transform duration-300" />
                   Key Features
                 </h3>
-                {project.Features.length > 0 ? (
+                {project.keyFeatures.length > 0 ? (
                   <ul className="list-none space-y-2">
-                    {project.Features.map((feature, index) => (
+                    {project.keyFeatures.map((feature, index) => (
                       <FeatureItem key={index} feature={feature} />
                     ))}
                   </ul>
