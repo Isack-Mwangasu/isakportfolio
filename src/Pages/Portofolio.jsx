@@ -165,22 +165,24 @@ export default function FullWidthTabs() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [projectsSnap, certificatesSnap] = await Promise.all([
-        getDocs(collection(db, "projects")),
-        getDocs(collection(db, "certificates")),
+      const getFirstNonEmptyDocs = async (collectionNames) => {
+        let lastDocs = [];
+        for (const collectionName of collectionNames) {
+          const snap = await getDocs(collection(db, collectionName));
+          lastDocs = snap.docs;
+          if (snap.docs.length > 0) {
+            return snap.docs;
+          }
+        }
+        return lastDocs;
+      };
+
+      const [projectDocs, certificateDocs] = await Promise.all([
+        getFirstNonEmptyDocs(["projects", "project", "Projects"]),
+        getFirstNonEmptyDocs(["certificates", "certificate", "Certificates"]),
       ]);
 
-      let certificateDocs = certificatesSnap.docs;
-      if (certificateDocs.length === 0) {
-        const fallbackCertificatesSnap = await getDocs(collection(db, "certificate"));
-        certificateDocs = fallbackCertificatesSnap.docs;
-      }
-      if (certificateDocs.length === 0) {
-        const fallbackCertificatesSnap = await getDocs(collection(db, "Certificates"));
-        certificateDocs = fallbackCertificatesSnap.docs;
-      }
-
-      const projectData = projectsSnap.docs.map((doc) => ({
+      const projectData = projectDocs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })).map(normalizeProject);
@@ -208,7 +210,7 @@ export default function FullWidthTabs() {
       localStorage.setItem("projects", JSON.stringify(projectData));
       localStorage.setItem("certificates", JSON.stringify(finalCertificateData));
     } catch (error) {
-      console.error("Error fetching data from Firestore:", error.message);
+      console.error("Error fetching data from Firestore:", error?.code || error?.message || error);
 
       const fallbackCertificateData = fallbackCertificates.map((certificate) =>
         normalizeCertificate(certificate)
