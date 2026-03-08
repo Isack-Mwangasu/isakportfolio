@@ -52,7 +52,7 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
                         )}
                     </div>
                     <span className="text-xs text-gray-400 whitespace-normal sm:whitespace-nowrap">
-                        {formatDate(comment.created_at)}
+                        {formatDate(comment.createdAt || comment.created_at)}
                     </span>
                 </div>
                 <p className="text-gray-300 text-sm break-words leading-relaxed mt-1">
@@ -260,6 +260,7 @@ const Comments = () => {
 
     const uploadImage = useCallback(async (imageFile) => {
         if (!imageFile) return null;
+
         return null;
     }, []);
 
@@ -268,7 +269,13 @@ const Comments = () => {
         setIsSubmitting(true);
         
         try {
-            const profileImageUrl = await uploadImage(imageFile);
+            let profileImageUrl = null;
+            try {
+                profileImageUrl = await uploadImage(imageFile);
+            } catch (uploadError) {
+                console.warn('Profile image upload skipped:', uploadError);
+                profileImageUrl = null;
+            }
 
             await addDoc(collection(db, "comments"), {
                 content: newComment,
